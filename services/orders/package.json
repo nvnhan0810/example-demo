@@ -1,0 +1,13 @@
+{
+  "name": "orders",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "fastify": "^5.8.5",
+    "ioredis": "^5.10.1",
+    "kafkajs": "^2.2.4",
+    "pg": "^8.20.0",
+    "tsx": "^4.21.0",
+    "zod": "^4.4.3"
+  }
+}

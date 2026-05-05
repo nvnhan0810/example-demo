@@ -1,0 +1,53 @@
+{
+  "name": "example-demo",
+  "version": "1.0.0",
+  "description": "Mục tiêu của repo này là **demo eCommerce “đủ bài”** theo hướng **microservice thật** (chạy bằng Docker), áp dụng **DDD + Clean Architecture**, **event-driven** với **Kafka**, dùng **PostgreSQL** (mỗi service 1 database/schema riêng), tích hợp **Redis**, **Elasticsearch**, và có định hướng **TDD** (test pyramid + contract test).",
+  "private": true,
+  "scripts": {
+    "dev:gateway": "tsx services/gateway/src/main.ts",
+    "dev:catalog": "tsx services/catalog/src/main.ts",
+    "dev:search": "tsx services/search/src/main.ts",
+    "dev:orders": "tsx services/orders/src/main.ts",
+    "dev:inventory": "tsx services/inventory/src/main.ts",
+    "dev:payments": "tsx services/payments/src/main.ts",
+    "dev:shipping": "tsx services/shipping/src/main.ts",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "workspaces": [
+    "libs/*",
+    "services/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nvnhan0810/example-demo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/nvnhan0810/example-demo/issues"
+  },
+  "homepage": "https://github.com/nvnhan0810/example-demo#readme",
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^10.3.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10",
+    "vitest": "^4.1.5"
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.15.3",
+    "dotenv": "^17.4.2",
+    "fastify": "^5.8.5",
+    "ioredis": "^5.10.1",
+    "kafkajs": "^2.2.4",
+    "pg": "^8.20.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "zod": "^4.4.3"
+  }
+}

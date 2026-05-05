@@ -1,0 +1,10 @@
+{
+  "name": "gateway",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "fastify": "^5.8.5",
+    "tsx": "^4.21.0",
+    "zod": "^4.4.3"
+  }
+}
