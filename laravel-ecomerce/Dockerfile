@@ -94,7 +94,7 @@ COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 WORKDIR /var/www/html
 
 COPY --from=vendor /app/app ./app
-COPY --from=vendor /app/src ./src
+COPY --from=vendor /app/modules ./modules
 COPY --from=vendor /app/bootstrap ./bootstrap
 COPY --from=vendor /app/config ./config
 COPY --from=vendor /app/database ./database
