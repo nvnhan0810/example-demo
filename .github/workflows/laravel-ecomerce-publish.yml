@@ -1,0 +1,111 @@
+name: Publish Docker image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      deploy_only:
+        description: "Skip build, only trigger deploy webhook"
+        type: boolean
+        default: false
+      image_tag:
+        description: "Image tag when deploy_only=true (e.g. abc1234). Empty = short SHA."
+        required: false
+        type: string
+
+concurrency:
+  group: foreign-publish-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: nvnhan0810/example-demo/laravel-ecomerce
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.result.outputs.should_build }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect .github / backend changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/v')
+        with:
+          base: ${{ github.event.before }}
+          ref: ${{ github.event.after }}
+          filters: |
+            should_build:
+              - '.github/**'
+              - 'laravel-ecomerce/**'
+
+      - name: Set build flag
+        id: result
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.deploy_only }}" = "true" ]; then
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] || [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.filter.outputs.should_build }}" = "true" ]; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build-and-push:
+    needs: changes
+    if: needs.changes.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            # Floating tag for quick pulls / default Deployment
+            type=raw,value=main,enable={{is_default_branch}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            # Pin used by deploy webhook + kustomize
+            type=sha,prefix=,format=short
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./laravel-ecomerce
+          file: ./laravel-ecomerce/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_URL=https://laravel-ecomerce.test
+          cache-from: type=gha,scope=foreign-learning-app-production
+          cache-to: type=gha,mode=max,scope=foreign-learning-app-production
+          provenance: false
+          sbom: false
