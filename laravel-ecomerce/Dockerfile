@@ -41,7 +41,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY vite.config.js jsconfig.json ./
+COPY vite.config.js tsconfig.json ./
 COPY resources ./resources
 
 RUN npm run build
