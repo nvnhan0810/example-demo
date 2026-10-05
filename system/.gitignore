@@ -1,0 +1,6 @@
+ansible/ssh-github-playbook/inventory.yml
+k3s/.terraform
+k3s/terraform.tfstate
+k3s/terraform.tfstate.backup
+k3s/terraform.tfvars
+k3s/.terraform.lock.hcl

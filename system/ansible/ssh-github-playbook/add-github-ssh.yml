@@ -1,0 +1,69 @@
+---
+- name: Add Github SSH Keys to Server
+  hosts: all
+  become: yes
+  vars:
+    ssh_keys_dir: "files/"
+    ssh_user: thk-system
+    ssh_home: "/home/{{ ssh_user }}"
+
+  tasks:
+    - name: Ensure destination directory exists
+      file:
+        path: "{{ ssh_home }}/.ssh"
+        state: directory
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: '0755'
+
+    - name: Copy all Github SSH Keys to server
+      copy:
+        src: "{{ item }}"
+        dest: "{{ ssh_home }}/.ssh/"
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: '0644'
+      with_fileglob:
+        - "{{ ssh_keys_dir }}*.pem"
+
+    - name: Read SSH Config content
+      delegate_to: localhost
+      run_once: true
+      become: no
+      slurp:
+        src: files/ssh_config
+      register: file_content
+
+    - name: Update SSH Config
+      blockinfile:
+        path: "{{ ssh_home }}/.ssh/config"
+        block: "{{ file_content.content | b64decode }}"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK"
+        create: yes
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        mode: '0644'
+
+    - name: Set SSH private key permissions
+      file:
+        path: "{{ ssh_home }}/.ssh/thk-github-private.pem"
+        mode: '0600'
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        state: file
+
+    - name: Set SSH public key permissions
+      file:
+        path: "{{ ssh_home }}/.ssh/thk-github-public.pem"
+        mode: '0644'
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        state: file
+
+    - name: Set SSH config permissions
+      file:
+        path: "{{ ssh_home }}/.ssh/config"
+        mode: '0644'
+        owner: "{{ ssh_user }}"
+        group: "{{ ssh_user }}"
+        state: file

@@ -1,0 +1,6 @@
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/thk-github-private.pem
+    IdentitiesOnly yes
+    StrictHostKeyChecking no 

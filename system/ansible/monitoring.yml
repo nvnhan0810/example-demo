@@ -1,0 +1,118 @@
+---
+# =======================================================
+# PLAY 1: Cài Node Exporter trên TẤT CẢ các VM (host: all)
+# =======================================================
+- name: Setup Node Exporter for all VMs
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update apt cache & install prometheus-node-exporter
+      apt:
+        name: prometheus-node-exporter
+        state: present
+        update_cache: yes
+
+    - name: Ensure Node Exporter is running and enabled
+      systemd:
+        name: prometheus-node-exporter
+        state: started
+        enabled: yes
+
+# =======================================================
+# PLAY 2: Cài đặt và cấu hình Redis Cache (host: redis)
+# =======================================================
+- name: Setup Redis Server
+  hosts: redis
+  become: yes
+  tasks:
+    - name: Install Redis
+      apt:
+        name: redis-server
+        state: present
+        update_cache: yes
+
+    - name: Configure Redis to listen on all interfaces
+      replace:
+        path: /etc/redis/redis.conf
+        regexp: '^bind .*'
+        replace: 'bind 0.0.0.0'
+
+    - name: Disable protected mode for remote access
+      replace:
+        path: /etc/redis/redis.conf
+        regexp: '^protected-mode yes'
+        replace: 'protected-mode no'
+
+    - name: Set Redis maxmemory for caching (1.5GB)
+      lineinfile:
+        path: /etc/redis/redis.conf
+        line: "maxmemory 1500mb"
+        insertafter: EOF
+
+    - name: Set Redis eviction policy
+      lineinfile:
+        path: /etc/redis/redis.conf
+        line: "maxmemory-policy allkeys-lru"
+        insertafter: EOF
+
+    - name: Restart and enable Redis
+      systemd:
+        name: redis-server
+        state: restarted
+        enabled: yes
+
+# =======================================================
+# PLAY 3: Cài Docker, Prometheus & Grafana (host: monitoring)
+# =======================================================
+- name: Setup Monitoring System (Grafana & Prometheus)
+  hosts: monitoring
+  become: yes
+  tasks:
+    - name: Install Docker and Docker Compose
+      apt:
+        name: ['docker.io', 'docker-compose']
+        state: present
+        update_cache: yes
+    - name: Create monitoring directory
+      file:
+        path: /opt/monitoring
+        state: directory
+        mode: '0755'
+    - name: Generate prometheus.yml dynamically based on Inventory
+      copy:
+        dest: /opt/monitoring/prometheus.yml
+        content: |
+          global:
+            scrape_interval: 15s
+          scrape_configs:
+            - job_name: 'node_exporters'
+              static_configs:
+                - targets:
+                  # Tự động quét toàn bộ IP trong group 'all' của inventory
+                  {% for host in groups['all'] %}
+                  - '{{ hostvars[host]["ansible_host"] }}:9100'
+                  {% endfor %}
+    - name: Create docker-compose.yml for Grafana and Prometheus
+      copy:
+        dest: /opt/monitoring/docker-compose.yml
+        content: |
+          version: '3.8'
+          services:
+            prometheus:
+              image: prom/prometheus:latest
+              container_name: prometheus
+              volumes:
+                - ./prometheus.yml:/etc/prometheus/prometheus.yml
+              restart: unless-stopped
+              network_mode: "host" # Dùng mạng host để dễ gọi node-exporter
+
+            grafana:
+              image: grafana/grafana:latest
+              container_name: grafana
+              ports:
+                - '3000:3000'
+              restart: unless-stopped
+    - name: Start Monitoring Stack via Docker Compose
+      command: docker-compose up -d
+      args:
+        chdir: /opt/monitoring
