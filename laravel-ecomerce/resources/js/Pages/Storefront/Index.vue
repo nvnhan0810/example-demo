@@ -1,206 +1,266 @@
 <template>
-  <div class="storefront-container">
-    <!-- Header hiển thị giỏ hàng và Nút thêm mới -->
-    <header class="header">
-      <h1>Cửa Hàng</h1>
-      <div class="header-actions">
-        <div class="cart-info">
-          <span>🛒 Giỏ hàng: <strong>{{ cartCount }}</strong> sản phẩm</span>
-        </div>
-        <!-- Nút Tạo sản phẩm mới -->
-        <Link href="/products/create" class="create-btn">
-          + Thêm sản phẩm
+  <div class="min-h-screen bg-[radial-gradient(circle_at_top,_#dff3f0_0%,_#f7fafc_42%,_#eef3f6_100%)] text-[var(--color-ink)]">
+    <header class="border-b border-[var(--color-sand)]/80 bg-white/70 backdrop-blur">
+      <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
+        <Link href="/" class="font-[family-name:var(--font-display)] text-2xl tracking-tight text-[var(--color-ink)]">
+          NovaMart
         </Link>
-      </div>
-    </header>
 
-    <!-- Danh sách sản phẩm -->
-    <main class="product-grid">
-      <div 
-        v-for="product in products" 
-        :key="product.id" 
-        class="product-card"
-      >
-        <h2 class="product-name">{{ product.name }}</h2>
-        <p class="product-price">{{ formatPrice(product.price) }}</p>
-        
-        <!-- Các nút hành động của sản phẩm -->
-        <div class="action-buttons">
-          <button 
-            @click="addToCart(product.id)" 
-            :disabled="isAdding === product.id"
-            class="add-button"
+        <form class="flex min-w-[240px] flex-1 max-w-xl gap-2" @submit.prevent="search">
+          <input
+            v-model="searchQuery"
+            type="search"
+            placeholder="Tìm sản phẩm, thương hiệu, SKU..."
+            class="w-full rounded-xl border border-[var(--color-sand)] bg-white px-4 py-2.5 text-sm outline-none ring-[var(--color-leaf)] focus:ring-2"
+          />
+          <button
+            type="submit"
+            class="rounded-xl bg-[var(--color-leaf)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--color-leaf-dark)]"
           >
-            {{ isAdding === product.id ? 'Đang thêm...' : 'Thêm vào giỏ' }}
+            Tìm
           </button>
+        </form>
 
-          <!-- Nút Chỉnh sửa sản phẩm -->
-          <Link :href="`/products/${product.id}/edit`" class="edit-btn">
-            Sửa
+        <div class="flex items-center gap-3">
+          <div class="rounded-full bg-[var(--color-mist)] px-3 py-1.5 text-sm">
+            Giỏ · <span class="font-semibold">{{ cartCount }}</span>
+          </div>
+          <Link
+            href="/products/create"
+            class="rounded-xl border border-[var(--color-sand)] bg-white px-3 py-2 text-sm font-medium hover:bg-[var(--color-mist)]"
+          >
+            + Thêm SP
           </Link>
         </div>
       </div>
-    </main>
+    </header>
 
-    <!-- Thông báo nếu không có sản phẩm -->
-    <div v-if="products.length === 0" class="empty-state">
-      Hiện chưa có sản phẩm nào.
+    <section class="mx-auto max-w-6xl px-4 pb-6 pt-10">
+      <p class="mb-2 text-sm font-medium uppercase tracking-[0.18em] text-[var(--color-leaf)]">Sàn mua sắm</p>
+      <h1 class="font-[family-name:var(--font-display)] text-4xl leading-tight md:text-5xl">
+        NovaMart
+      </h1>
+      <p class="mt-3 max-w-xl text-base text-slate-600">
+        Khám phá hàng ngàn sản phẩm từ thời trang đến điện tử — giá rõ ràng, giao nhanh.
+      </p>
+    </section>
+
+    <div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 pb-16 lg:flex-row">
+      <aside class="w-full shrink-0 lg:w-56">
+        <div class="sticky top-4 rounded-2xl border border-[var(--color-sand)] bg-white/80 p-4">
+          <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Danh mục</h2>
+          <nav class="flex flex-col gap-1">
+            <button
+              type="button"
+              class="rounded-lg px-3 py-2 text-left text-sm transition"
+              :class="!filters.category ? 'bg-[var(--color-leaf)] text-white' : 'hover:bg-[var(--color-mist)]'"
+              @click="filterCategory(null)"
+            >
+              Tất cả
+            </button>
+            <button
+              v-for="category in categories"
+              :key="category"
+              type="button"
+              class="rounded-lg px-3 py-2 text-left text-sm transition"
+              :class="filters.category === category ? 'bg-[var(--color-leaf)] text-white' : 'hover:bg-[var(--color-mist)]'"
+              @click="filterCategory(category)"
+            >
+              {{ category }}
+            </button>
+          </nav>
+        </div>
+      </aside>
+
+      <main class="min-w-0 flex-1">
+        <div class="mb-4 flex items-center justify-between gap-3 text-sm text-slate-600">
+          <p>
+            <span class="font-semibold text-[var(--color-ink)]">{{ products.meta.total.toLocaleString('vi-VN') }}</span>
+            sản phẩm
+          </p>
+          <p v-if="filters.q">Từ khóa: “{{ filters.q }}”</p>
+        </div>
+
+        <div
+          v-if="products.data.length > 0"
+          class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4"
+        >
+          <article
+            v-for="product in products.data"
+            :key="product.id"
+            class="group overflow-hidden rounded-2xl border border-[var(--color-sand)] bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          >
+            <Link :href="`/products/${product.id}`" class="block">
+              <div class="relative aspect-square overflow-hidden bg-[var(--color-mist)]">
+                <img
+                  :src="product.image_url ?? placeholderImage"
+                  :alt="product.name"
+                  class="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <span
+                  v-if="discountPercent(product) !== null"
+                  class="absolute left-2 top-2 rounded-md bg-[var(--color-ember)] px-2 py-0.5 text-xs font-bold text-white"
+                >
+                  -{{ discountPercent(product) }}%
+                </span>
+              </div>
+              <div class="space-y-1.5 p-3">
+                <p class="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                  {{ product.brand ?? product.category }}
+                </p>
+                <h3 class="line-clamp-2 min-h-10 text-sm font-medium leading-snug">
+                  {{ product.name }}
+                </h3>
+                <div class="flex items-baseline gap-2">
+                  <span class="text-base font-bold text-[var(--color-ember)]">
+                    {{ formatPrice(product.price) }}
+                  </span>
+                  <span
+                    v-if="product.compare_at_price"
+                    class="text-xs text-slate-400 line-through"
+                  >
+                    {{ formatPrice(product.compare_at_price) }}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500">
+                  ★ {{ Number(product.rating_avg).toFixed(1) }}
+                  · Đã bán {{ product.sold_count.toLocaleString('vi-VN') }}
+                </p>
+              </div>
+            </Link>
+            <div class="flex gap-2 border-t border-[var(--color-sand)] p-3 pt-2">
+              <button
+                type="button"
+                class="flex-1 rounded-lg bg-[var(--color-leaf)] px-2 py-2 text-xs font-semibold text-white transition hover:bg-[var(--color-leaf-dark)] disabled:cursor-not-allowed disabled:bg-slate-300"
+                :disabled="isAdding === product.id || !product.is_available"
+                @click="addToCart(product.id)"
+              >
+                {{ cartLabel(product) }}
+              </button>
+              <Link
+                :href="`/products/${product.id}/edit`"
+                class="rounded-lg border border-[var(--color-sand)] px-3 py-2 text-xs font-medium text-slate-600 hover:bg-[var(--color-mist)]"
+              >
+                Sửa
+              </Link>
+            </div>
+          </article>
+        </div>
+
+        <div
+          v-else
+          class="rounded-2xl border border-dashed border-[var(--color-sand)] bg-white/60 px-6 py-16 text-center text-slate-500"
+        >
+          Không tìm thấy sản phẩm phù hợp.
+        </div>
+
+        <div
+          v-if="products.meta.last_page > 1"
+          class="mt-8 flex items-center justify-center gap-3"
+        >
+          <button
+            type="button"
+            class="rounded-lg border border-[var(--color-sand)] bg-white px-3 py-2 text-sm disabled:opacity-40"
+            :disabled="!canGoPrev"
+            @click="goPage(products.meta.page - 1)"
+          >
+            Trước
+          </button>
+          <span class="text-sm text-slate-600">
+            Trang {{ products.meta.page }} / {{ products.meta.last_page }}
+          </span>
+          <button
+            type="button"
+            class="rounded-lg border border-[var(--color-sand)] bg-white px-3 py-2 text-sm disabled:opacity-40"
+            :disabled="!canGoNext"
+            @click="goPage(products.meta.page + 1)"
+          >
+            Sau
+          </button>
+        </div>
+      </main>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-// Import thêm component Link từ Inertia
-import { router, Link } from '@inertiajs/vue3'
+import { computed, ref } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
+import {
+  discountPercent,
+  formatPrice,
+  type Product,
+  type ProductPage,
+} from '../../types/product'
 
-interface Product {
-  id: number;
-  name: string;
-  price: number;
+const props = defineProps<{
+  products: ProductPage
+  cartCount: number
+  categories: string[]
+  filters: {
+    category: string | null
+    q: string | null
+  }
+}>()
+
+const searchQuery = ref(props.filters.q ?? '')
+const isAdding = ref<number | null>(null)
+const placeholderImage = 'https://picsum.photos/seed/novamart/600/600'
+
+const canGoPrev = computed((): boolean => props.products.meta.page > 1)
+const canGoNext = computed((): boolean => props.products.meta.page < props.products.meta.last_page)
+
+const cartLabel = (product: Product): string => {
+  if (!product.is_available) {
+    return 'Hết hàng'
+  }
+
+  if (isAdding.value === product.id) {
+    return 'Đang thêm...'
+  }
+
+  return 'Thêm giỏ'
 }
 
-defineProps<{
-  products: Product[];
-  cartCount: number;
-}>();
+const browse = (params: Record<string, string | number | null>): void => {
+  router.get('/', params, {
+    preserveState: true,
+    preserveScroll: true,
+  })
+}
 
-const isAdding = ref<number | null>(null);
+const search = (): void => {
+  browse({
+    q: searchQuery.value || null,
+    category: props.filters.category,
+    page: 1,
+  })
+}
 
-const addToCart = (productId: number) => {
-  isAdding.value = productId;
+const filterCategory = (category: string | null): void => {
+  browse({
+    q: props.filters.q,
+    category,
+    page: 1,
+  })
+}
+
+const goPage = (page: number): void => {
+  browse({
+    q: props.filters.q,
+    category: props.filters.category,
+    page,
+  })
+}
+
+const addToCart = (productId: number): void => {
+  isAdding.value = productId
   router.post('/add-to-cart', { product_id: productId }, {
-    preserveScroll: true, 
+    preserveScroll: true,
     onFinish: () => {
-      isAdding.value = null;
-    }
-  });
-};
-
-const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('vi-VN', { 
-    style: 'currency', 
-    currency: 'VND' 
-  }).format(price);
-};
+      isAdding.value = null
+    },
+  })
+}
 </script>
-
-<style scoped>
-.storefront-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  font-family: sans-serif;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.create-btn {
-  background-color: #3182ce;
-  color: white;
-  text-decoration: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-weight: bold;
-  transition: background-color 0.2s;
-}
-
-.create-btn:hover {
-  background-color: #2b6cb0;
-}
-
-.product-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-.product-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-  transition: transform 0.2s;
-  display: flex;
-  flex-direction: column;
-}
-
-.product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-}
-
-.product-name {
-  margin-top: 0;
-  font-size: 1.25rem;
-}
-
-.product-price {
-  color: #e53e3e;
-  font-weight: bold;
-  font-size: 1.2rem;
-  margin: 10px 0 20px;
-}
-
-/* Flexbox để dàn 2 nút bấm ngang nhau */
-.action-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: auto; /* Đẩy các nút xuống đáy thẻ card */
-}
-
-.add-button {
-  flex: 2; /* Chiếm nhiều không gian hơn */
-  background-color: #42b883;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.add-button:disabled {
-  background-color: #a0aec0;
-  cursor: not-allowed;
-}
-
-.edit-btn {
-  flex: 1; /* Chiếm ít không gian hơn */
-  background-color: transparent;
-  color: #4a5568;
-  border: 1px solid #cbd5e0;
-  padding: 10px;
-  border-radius: 4px;
-  text-decoration: none;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.edit-btn:hover {
-  background-color: #edf2f7;
-  color: #2d3748;
-}
-
-.empty-state {
-  text-align: center;
-  color: #718096;
-  margin-top: 50px;
-}
-</style>
