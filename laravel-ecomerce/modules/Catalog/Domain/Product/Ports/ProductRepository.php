@@ -10,6 +10,12 @@ interface ProductRepository
 {
     public function findById(int $id): ?Product;
 
+    /**
+     * @param  list<int>  $ids
+     * @return array<int, Product> keyed by product id
+     */
+    public function findByIds(array $ids): array;
+
     public function paginate(
         int $page,
         int $perPage,
@@ -21,6 +27,8 @@ interface ProductRepository
     public function create(Product $product): Product;
 
     public function update(Product $product): Product;
+
+    public function recordSale(int $productId, int $quantity): void;
 
     public function nextSkuSequence(): int;
 }
