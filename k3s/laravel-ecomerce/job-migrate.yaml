@@ -30,7 +30,7 @@ spec:
           image: ghcr.io/nvnhan0810/example-demo/laravel-ecomerce:latest
           imagePullPolicy: Always
           # Image has no ENTRYPOINT — `args` replaces Dockerfile CMD with migrate only.
-          args: ["php", "artisan", "migrate", "--force"]
+          args: ["php", "artisan", "migrate", "--database=mysql-migrate", "--force"]
           envFrom:
             - secretRef:
                 name: app-env
