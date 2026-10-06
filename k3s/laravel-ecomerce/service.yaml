@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: laravel-ecomerce
+  namespace: laravel-ecomerce
+  labels:
+    app.kubernetes.io/name: laravel-ecomerce
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: laravel-ecomerce
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

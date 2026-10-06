@@ -1,0 +1,36 @@
+# Run once per deploy when the image tag changes.
+# install.sh applies this job; delete old jobs before re-run if needed.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: laravel-ecomerce-migrate
+  namespace: laravel-ecomerce
+  labels:
+    app.kubernetes.io/name: laravel-ecomerce
+    app.kubernetes.io/component: migrate
+  annotations:
+    # 1. Bảo Argo CD chạy Job này TRƯỚC KHI sync các resource khác
+    argocd.argoproj.io/hook: PreSync
+    # 2. XÓA Job cũ (của đợt release trước) trước khi tạo Job mới để không bị lỗi
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: laravel-ecomerce-migrate
+    spec:
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+      containers:
+        - name: migrate
+          image: ghcr.io/nvnhan0810/example-demo/laravel-ecomerce:latest
+          imagePullPolicy: Always
+          # Image has no ENTRYPOINT — `args` replaces Dockerfile CMD with migrate only.
+          args: ["php", "artisan", "migrate", "--force"]
+          envFrom:
+            - secretRef:
+                name: app-env

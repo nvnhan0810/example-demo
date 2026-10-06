@@ -1,0 +1,4 @@
+ansible/inventory.yml
+k3s.yaml
+.env
+plain-secret.yaml
