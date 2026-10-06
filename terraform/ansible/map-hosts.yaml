@@ -1,0 +1,30 @@
+---
+- name: Quét và cập nhật file hosts với danh sách domain
+  hosts: all
+  become: yes
+  # Bắt buộc bật gather_facts để Ansible thu thập IP thật của các VM
+  gather_facts: yes 
+  
+  vars:
+    # Khai báo danh sách các IP và list domains tương ứng
+    domain_mappings:
+      - ip: "192.168.1.240"
+        domains:
+          - "laravel-ecomerce.test"
+      - ip: "192.168.1.234"
+        domains:
+          - "grafana.test"
+
+  tasks:
+    - name: Đảm bảo các domain được cấu hình đúng IP trong /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        # item.1 là domain. Dùng regex_escape để xử lý dấu chấm (ví dụ: domain\.com)
+        regexp: '.*\s+{{ item.1 | regex_escape }}(\s+.*)?$'
+        # Điều kiện: Nếu IP cấu hình trùng với IP card mạng của VM hiện tại -> dùng 127.0.0.1, ngược lại dùng IP gốc
+        line: "{% if item.0.ip in ansible_all_ipv4_addresses or item.0.ip == inventory_hostname or item.0.ip == ansible_host|default('') %}127.0.0.1{% else %}{{ item.0.ip }}{% endif %} {{ item.1 }}"
+        state: present
+        backup: yes
+      # Hàm subelements sẽ tự động tách list domains ra ghép cặp với IP để lặp
+      # Ví dụ: (192.168.1.240, domain.com), (192.168.1.240, www.domain.com)...
+      loop: "{{ domain_mappings | subelements('domains') }}"

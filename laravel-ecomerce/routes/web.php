@@ -4,6 +4,13 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StorefrontController;
 use App\Http\Controllers\ProductController;
 
+// For k3s health check
+Route::get('/up', function () {
+    return response()->json([]);
+});
+
+
+
 // Hiển thị giao diện Storefront
 Route::get('/', [StorefrontController::class, 'index'])->name('storefront.index');
 

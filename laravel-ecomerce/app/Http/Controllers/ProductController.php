@@ -24,7 +24,7 @@ class ProductController extends Controller
 
         Product::create($validated);
 
-        return redirect()->route('products.create'); 
+        return redirect()->route('storefront.index'); 
         // Trong thực tế bạn có thể redirect về danh sách: redirect()->route('products.index')
     }
 

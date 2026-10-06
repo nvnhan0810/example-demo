@@ -1,0 +1,29 @@
+---
+all:
+  vars:
+    ansible_ssh_private_key_file: ~/.ssh/thk-server
+    ansible_become_password: KuniwEv1
+  children:
+    webservers:
+      hosts:
+        k3s-masster:
+          ansible_host: 192.168.1.240
+          ansible_user: thk-system
+        k3s-worker-1:
+          ansible_host: 192.168.1.241
+          ansible_user: thk-system
+        k3s-worker-2:
+          ansible_host: 192.168.1.242
+          ansible_user: thk-system
+        db-master:
+          ansible_host: 192.168.1.232
+          ansible_user: thk-system
+        db-replica:
+          ansible_host: 192.168.1.231
+          ansible_user: thk-system
+        redis:
+          ansible_host: 192.168.1.233
+          ansible_user: thk-system
+        monitoring:
+          ansible_host: 192.168.1.234
+          ansible_user: thk-system
