@@ -1,11 +1,7 @@
 <template>
   <div class="min-h-screen bg-[radial-gradient(circle_at_top,_#dff3f0_0%,_#f7fafc_42%,_#eef3f6_100%)] text-[var(--color-ink)]">
-    <header class="border-b border-[var(--color-sand)]/80 bg-white/70 backdrop-blur">
-      <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
-        <Link href="/" class="font-[family-name:var(--font-display)] text-2xl tracking-tight text-[var(--color-ink)]">
-          NovaMart
-        </Link>
-
+    <StoreHeader>
+      <template #center>
         <form class="flex min-w-[240px] flex-1 max-w-xl gap-2" @submit.prevent="search">
           <input
             v-model="searchQuery"
@@ -20,20 +16,8 @@
             Tìm
           </button>
         </form>
-
-        <div class="flex items-center gap-3">
-          <div class="rounded-full bg-[var(--color-mist)] px-3 py-1.5 text-sm">
-            Giỏ · <span class="font-semibold">{{ cartCount }}</span>
-          </div>
-          <Link
-            href="/products/create"
-            class="rounded-xl border border-[var(--color-sand)] bg-white px-3 py-2 text-sm font-medium hover:bg-[var(--color-mist)]"
-          >
-            + Thêm SP
-          </Link>
-        </div>
-      </div>
-    </header>
+      </template>
+    </StoreHeader>
 
     <section class="mx-auto max-w-6xl px-4 pb-6 pt-10">
       <p class="mb-2 text-sm font-medium uppercase tracking-[0.18em] text-[var(--color-leaf)]">Sàn mua sắm</p>
@@ -187,6 +171,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import StoreHeader from '../../Components/StoreHeader.vue'
 import {
   discountPercent,
   formatPrice,
@@ -196,7 +181,6 @@ import {
 
 const props = defineProps<{
   products: ProductPage
-  cartCount: number
   categories: string[]
   filters: {
     category: string | null
@@ -256,7 +240,7 @@ const goPage = (page: number): void => {
 
 const addToCart = (productId: number): void => {
   isAdding.value = productId
-  router.post('/add-to-cart', { product_id: productId }, {
+  router.post('/cart', { product_id: productId }, {
     preserveScroll: true,
     onFinish: () => {
       isAdding.value = null

@@ -7,6 +7,7 @@ use Modules\Catalog\Domain\Product\Ports\ProductRepository;
 use Modules\Catalog\Domain\Product\Product;
 use Modules\Catalog\Domain\Product\ProductPage;
 use Modules\Catalog\Domain\Product\ProductStatus;
+use RuntimeException;
 
 final class EloquentProductRepository implements ProductRepository
 {
@@ -15,6 +16,25 @@ final class EloquentProductRepository implements ProductRepository
         $model = ProductModel::query()->find($id);
 
         return $model instanceof ProductModel ? $this->toDomain($model) : null;
+    }
+
+    public function findByIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $models = ProductModel::query()
+            ->whereIn('id', $ids)
+            ->get();
+
+        $mapped = [];
+
+        foreach ($models as $model) {
+            $mapped[(int) $model->id] = $this->toDomain($model);
+        }
+
+        return $mapped;
     }
 
     public function paginate(
@@ -75,6 +95,23 @@ final class EloquentProductRepository implements ProductRepository
         $model->refresh();
 
         return $this->toDomain($model);
+    }
+
+    public function recordSale(int $productId, int $quantity): void
+    {
+        $model = ProductModel::query()->lockForUpdate()->find($productId);
+
+        if (! $model instanceof ProductModel) {
+            throw new RuntimeException('Sản phẩm không tồn tại.');
+        }
+
+        if ((int) $model->stock_quantity < $quantity) {
+            throw new RuntimeException('Không đủ tồn kho.');
+        }
+
+        $model->stock_quantity = (int) $model->stock_quantity - $quantity;
+        $model->sold_count = (int) $model->sold_count + $quantity;
+        $model->save();
     }
 
     public function nextSkuSequence(): int

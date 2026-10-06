@@ -1,18 +1,10 @@
 <template>
   <div class="min-h-screen bg-[radial-gradient(circle_at_top,_#dff3f0_0%,_#f7fafc_45%,_#eef3f6_100%)] text-[var(--color-ink)]">
-    <header class="border-b border-[var(--color-sand)]/80 bg-white/70 backdrop-blur">
-      <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-        <Link href="/" class="font-[family-name:var(--font-display)] text-2xl tracking-tight">
-          NovaMart
-        </Link>
-        <div class="flex items-center gap-3 text-sm">
-          <Link href="/" class="text-slate-600 hover:text-[var(--color-leaf)]">← Cửa hàng</Link>
-          <div class="rounded-full bg-[var(--color-mist)] px-3 py-1.5">
-            Giỏ · <span class="font-semibold">{{ cartCount }}</span>
-          </div>
-        </div>
-      </div>
-    </header>
+    <StoreHeader>
+      <template #center>
+        <Link href="/" class="text-sm text-slate-600 hover:text-[var(--color-leaf)]">← Cửa hàng</Link>
+      </template>
+    </StoreHeader>
 
     <main class="mx-auto grid max-w-6xl gap-8 px-4 py-10 lg:grid-cols-2">
       <div class="overflow-hidden rounded-3xl border border-[var(--color-sand)] bg-white shadow-sm">
@@ -74,6 +66,12 @@
             {{ addLabel }}
           </button>
           <Link
+            href="/cart"
+            class="rounded-xl border border-[var(--color-sand)] bg-white px-5 py-3 text-sm font-medium hover:bg-[var(--color-mist)]"
+          >
+            Xem giỏ
+          </Link>
+          <Link
             :href="`/products/${product.id}/edit`"
             class="rounded-xl border border-[var(--color-sand)] bg-white px-5 py-3 text-sm font-medium hover:bg-[var(--color-mist)]"
           >
@@ -100,11 +98,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import StoreHeader from '../../Components/StoreHeader.vue'
 import { discountPercent, formatPrice, type Product } from '../../types/product'
 
 const props = defineProps<{
   product: Product
-  cartCount: number
 }>()
 
 const isAdding = ref(false)
@@ -125,7 +123,7 @@ const addLabel = computed((): string => {
 
 const addToCart = (): void => {
   isAdding.value = true
-  router.post('/add-to-cart', { product_id: props.product.id }, {
+  router.post('/cart', { product_id: props.product.id }, {
     preserveScroll: true,
     onFinish: () => {
       isAdding.value = false
